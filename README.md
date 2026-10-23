@@ -1,5 +1,50 @@
 # Canon SELPHY CP1500 — "pending" print job troubleshooting
 
+## Setup on a new Linux machine
+
+1. Install the required packages (Debian/Ubuntu names; adjust for your distro):
+
+   ```
+   sudo apt install cups cups-browsed ipp-usb avahi-daemon imagemagick just
+   ```
+
+   - `cups` + `cups-browsed` — printing system and the service that keeps the
+     `implicitclass` queue pointed at the printer
+   - `ipp-usb` — bridges the USB-connected, AirPrint-capable SELPHY into a
+     local IPP/mDNS endpoint
+   - `avahi-daemon` — mDNS/Bonjour discovery
+   - `imagemagick` — provides `convert`, used by `just compress`
+   - `just` — command runner used for `just compress` / `just print`
+
+2. Enable and start the discovery chain:
+
+   ```
+   sudo systemctl enable --now avahi-daemon ipp-usb cups-browsed cups
+   ```
+
+3. Plug in the Canon SELPHY CP1500 via USB. `ipp-usb` + `cups-browsed` should
+   auto-create a queue named `Canon_SELPHY_CP1500_USB`. Confirm with:
+
+   ```
+   lpstat -p -d
+   ```
+
+   If it doesn't appear automatically, add it manually using the bundled
+   `cp1500.ppd`:
+
+   ```
+   lpadmin -p Canon_SELPHY_CP1500_USB -E -v ipp://localhost/printers/Canon_SELPHY_CP1500_USB -P /workspace/cp1500.ppd
+   ```
+
+   (Prefer letting `cups-browsed` auto-discover it via mDNS — see the
+   Diagnosis section below for the expected `implicitclass://` setup.)
+
+4. Test a print:
+
+   ```
+   just print img/hand.JPG
+   ```
+
 Main reference: https://gist.github.com/benjaminkott/e293147dd0ea9e6fa7f1194567a5d1ba
 
 ## Symptom
